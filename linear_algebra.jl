@@ -79,20 +79,42 @@ end
 const DoF = 4005
 my_pydata = "/home/nicolas/pydata/"
 my_mesh_dir = my_pydata * "meshes/"
-my_coeff_dir = my_pydata * "2DKL_block_SExp_L0.1/sig21_ublock_4000_wclust20_svd_morton3_100000/"
+my_coeff_dir = my_pydata * "2DKL_block_SExp_L0.1/sig21_ublock_4000_wclustnc_svd_morton_100000/"
 #
 I, J, V = Vector{Float64}, Vector{Float64}, Vector{Float64}
-I = npzread(my_mesh_dir * "2D_ublock_4000_M_I.npy") .+ 1
-J = npzread(my_mesh_dir * "2D_ublock_4000_M_J.npy") .+ 1
-V = npzread(my_mesh_dir * "2D_ublock_4000_M_V.npy")
+I = (npzread(my_mesh_dir * "2D_ublock_4000_M_I.npy") .+ 1)::Vector{Int}
+J = (npzread(my_mesh_dir * "2D_ublock_4000_M_J.npy") .+ 1)::Vector{Int}
+V = npzread(my_mesh_dir * "2D_ublock_4000_M_V.npy")::Vector{Float64}
 M = sparse(I, J, V)
 I, J, V = nothing, nothing, nothing
 #
-const t0 = 27_000
-const m = 2_000
-const nvec = 100
+const n_smp = 100_000
+const n_clust = 400 # n_clust ∈ {25, 50, 100, 200, 400}
+kmeans_labels = (npzread(my_coeff_dir * "wclust$(n_clust)_kmeans_labels.npy") .+ 1)::Vector{Int}
 #
-function load_reals(DoF::Int, m::Int, t0::Int)
+function load_reals_of_kmeans_by_clust(DoF::Int, n_smp::Int, i_clust::Int, n_clust::Int)
+  m = Int(floor(1.25 * n_smp / n_clust))
+  X = zeros(Float64, DoF, m)
+  Xmean = zeros(Float64, DoF)
+  Xtmp = zeros(Float64, DoF)
+  t_clust = 0
+  for i_real in 1:n_smp
+    if kmeans_labels[i_real] == i_clust
+      t_clust += 1
+      Xtmp = npzread(my_coeff_dir * "real$(i_real - 1).npy")
+      if t_clust <= m
+        X[:, t_clust] = Xtmp
+      else
+        vcat(X, Xtmp)
+      end
+      Xmean += Xtmp
+    end
+  end
+  Xmean ./= t_clust
+  return X[:, 1:t_clust], Xmean, t_clust
+end
+#
+function load_contiguous_seq_of_reals(DoF::Int, m::Int, t0::Int)
   X = zeros(Float64, DoF, m)
   Xmean = zeros(Float64, DoF)
   Xtmp = zeros(Float64, DoF)
@@ -105,14 +127,25 @@ function load_reals(DoF::Int, m::Int, t0::Int)
   return X, Xmean
 end
 #
-X, Xmean = load_reals(DoF, m, t0)
+#
+#const t0 = 27_000
+#const m = 2_000
+#X, Xmean = load_contiguous_seq_of_reals(DoF, m, t0)
+#
+const nvec = 200
 #
 XtMX = Array{Float64, 2}
-@time XtMX = Symmetric(X'M*X ./ (m - 1))
-@time evals = eigvals(XtMX)
-npzwrite(my_coeff_dir * "evals.npy", evals[m:-1:m - nvec + 1])
-#
-X .-= Xmean
-@time XtMX = Symmetric(X'M*X ./ (m - 1))
-@time evals = eigvals(XtMX)
-npzwrite(my_coeff_dir * "evals_zeromean.npy", evals[m:-1:m - nvec + 1])
+@time for i_clust in 1:n_clust
+  println("Analying cluster $(i_clust)/$(n_clust)")
+  fname = "wclust$(n_clust)_$(i_clust)_"
+  #
+  X, Xmean, m = load_reals_of_kmeans_by_clust(DoF, n_smp, i_clust, n_clust)
+  XtMX = Symmetric(X'M*X ./ (m - 1))
+  evals = eigvals(XtMX)
+  npzwrite(my_coeff_dir * fname * "evals.npy", evals[m:-1:m - minimum((nvec, m)) + 1])
+  #
+  X .-= Xmean
+  XtMX = Symmetric(X'M*X ./ (m - 1))
+  evals = eigvals(XtMX)
+  npzwrite(my_coeff_dir * fname * "evals_zeromean.npy", evals[m:-1:m - minimum((nvec, m)) + 1])
+end
