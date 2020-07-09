@@ -9,10 +9,11 @@ SIAM, 2003, 82
 
 # Examples
 ```jldoctest
+julia>
 using LinearAlgebra: SymTridiagonal;
 using SparseArrays: sparse;
-push!(LOAD_PATH, "./MyLinearSolvers");
-using MyLinearSolvers: cg;
+push!(LOAD_PATH, "./MyRecyclingKrylovSolvers");
+using MyRecyclingKrylovSolvers: cg;
 const n = 1_000_000;
 const T = Float64;
 A = sparse(SymTridiagonal(2 .+ .05 * rand(T, n), -1 .+ .05 * rand(T, n-1)));
@@ -59,9 +60,10 @@ SIAM, 2003, 82.
 
 # Examples
 ```jldoctest
+julia>
 using SparseArrays: spdiagm
-push!(LOAD_PATH, "./MyLinearSolvers");
-using MyLinearSolvers: pcg;
+push!(LOAD_PATH, "./MyRecyclingKrylovSolvers");
+using MyRecyclingKrylovSolvers: pcg;
 push!(LOAD_PATH, "./MyPreconditioners");
 using MyPreconditioners: BJPreconditioner;
 const n = 5_000_000;
