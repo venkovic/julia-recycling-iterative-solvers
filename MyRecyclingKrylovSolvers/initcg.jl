@@ -97,5 +97,45 @@ function initcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, W::Array{T,2}
 end
 
 function initpcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M, W::Array{T,2})
-  nothing
+  r, Ap, res_norm, p = similar(x), similar(x), similar(x), similar(x)
+  #
+  WtA = W' * A
+  WtAW = WtA * W
+  #
+  if iszero(x)
+    r .= b
+  else
+    r = b - A * x
+  end
+  mu = W' * r
+  mu = WtAW \ mu
+  x += W * mu
+  #
+  it = 1
+  r = b - A * x
+  rTr = dot(r, r)
+  z = (M \ r)::Vector{T}
+  rTz = dot(r, z)
+  p .= z
+  res_norm[it] = sqrt(rTr)
+  #
+  bnorm = norm2(b)
+  tol = eps * bnorm
+  #
+  while (it < A.n) && (res_norm[it] > tol)
+    mul!(Ap, A, p) # Ap = A * p
+    d = dot(p, Ap)
+    alpha = rTz / d
+    beta = 1. / rTz
+    axpy!(alpha, p, x) # x += alpha * p
+    axpy!(-alpha, Ap, r) # r -= alpha * Ap
+    rTr = dot(r, r)
+    z = (M \ r)::Vector{T}
+    rTz = dot(r, z)
+    beta *= rTz
+    axpby!(1, z, beta, p) # p = beta * p + z
+    it += 1
+    res_norm[it] = sqrt(rTr)
+  end
+  return x, it, res_norm[1:it]
 end

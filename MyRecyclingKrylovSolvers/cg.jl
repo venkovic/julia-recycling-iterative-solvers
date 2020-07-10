@@ -85,9 +85,9 @@ function pcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M)
   r, z, Ap, res_norm = similar(x), similar(x), similar(x), similar(x)
   #
   it = 1
-  r[1:end] = b - A * x
+  r = b - A * x
   rTr = dot(r, r)
-  z[1:end] = (M \ r)::Vector{T}
+  z = (M \ r)::Vector{T}
   rTz = dot(r, z)
   p = copy(z)
   res_norm[it] = sqrt(rTr)
@@ -102,7 +102,7 @@ function pcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M)
     axpy!(alpha, p, x) # x += alpha * p
     axpy!(-alpha, Ap, r) # r -= alpha * Ap
     rTr = dot(r, r)
-    z[1:end] = (M \ r)::Vector{T}
+    z = (M \ r)::Vector{T}
     rTz = dot(r, z)
     beta *= rTz
     axpby!(1, z, beta, p) # p = beta * p + z

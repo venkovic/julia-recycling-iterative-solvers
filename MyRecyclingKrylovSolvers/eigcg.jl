@@ -187,5 +187,84 @@ function eigcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, nvec::Int, spd
 end
 
 function eigpcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M, nvec::Int, spdim::Int)
-  nothing
+  r, Ap, p, res_norm, z = similar(x), similar(x), similar(x), similar(x), similar(x)
+  #
+  n = size(x)[1]
+  V = Array{T}(undef, (n, spdim))
+  VtAV = zeros(T, spdim, spdim)
+  Y = zeros(T, (spdim, 2 * nvec))
+  tvec = Vector{T}(undef, n)
+  just_restarted = false
+  #
+  it = 1
+  r = b - A * x
+  rTr = dot(r, r)
+  z = (M \ r)::Vector{T}
+  rTz = dot(r, z)
+  p .= z
+  res_norm[it] = sqrt(rTr)
+  #
+  ivec = 1
+  V[:, ivec] = z / sqrt(rTz)
+  #
+  bnorm = norm2(b)
+  tol = eps * bnorm
+  #
+  while (it < A.n) && (res_norm[it] > tol)
+    mul!(Ap, A, p) # Ap = A * p
+    d = dot(p, Ap)
+    alpha = rTz / d
+    beta = 1. / rTz
+    axpy!(alpha, p, x) # x += alpha * p
+    axpy!(-alpha, Ap, r) # r -= alpha * Ap
+    rTr = dot(r, r)
+    z = (M \ r)::Vector{T}
+    if just_restarted
+      hlpr = sqrt(rTz)
+    end
+    rTz = dot(r, z)
+    beta *= rTz
+    if ivec == spdim
+      tvec -= beta * Ap
+    end
+    axpby!(1, z, beta, p) # p = beta * p + z
+    it += 1
+    res_norm[it] = sqrt(rTr)
+    #
+    VtAV[ivec, ivec] += 1 / alpha
+    if just_restarted
+      tvec += Ap
+      nev = ivec - 1
+      VtAV[1:nev, ivec] = V[:, 1:nev]' * (tvec / hlpr)
+      just_restarted = false
+    end
+    #
+    if ivec == spdim
+      Tm = Symmetric(VtAV) # spdim-by-spdim
+      Y[:, 1:nvec] = eigvecs(Tm)[:, 1:nvec] # spdim-by-nvec
+      Y[1:spdim-1, nvec+1:end] = eigvecs(Tm[1:spdim-1, 1:spdim-1])[:, 1:nvec] # (spdim-1)-by-nvec
+      nev = rank(Y) # nvec <= nev <= 2*nvec
+      Q = svd(Y).U[:, 1:nev] # spdim-by-nev
+      H = Q' * (Tm * Q) # nev-by-nev
+      vals, Z = eigen(H)::Eigen{T,T,Array{T,2},Array{T,1}}
+      V[:, 1:nev] = V * (Q * Z) # n-by-nev
+      #
+      ivec = nev + 1
+      V[:, ivec] = z / sqrt(rTz)
+      VtAV .= 0
+      for j in 1:nev
+        VtAV[j, j] = vals[j]
+      end
+      VtAV[ivec, ivec] = beta / alpha
+      tvec = - beta * Ap
+      just_restarted = true
+      #VtAV[1:nev, ivec] = V[:, 1:nev]' * (A * V[:, ivec]) # Matrix-vector product avoided with tvec
+    else
+      ivec += 1
+      V[:, ivec] = z / sqrt(rTz)
+      VtAV[ivec - 1, ivec] = - sqrt(beta) / alpha
+      VtAV[ivec, ivec] = beta / alpha
+    end
+  end
+  return x, it, res_norm[1:it], V[:, 1:nvec]
 end
