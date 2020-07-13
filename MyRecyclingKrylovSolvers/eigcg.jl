@@ -196,7 +196,7 @@ Performs eigPCG (Stathopoulos & Orginos, 2010).
 Used at the begining of a solving procedure of linear systems A xs = bs with
 constant SPD matrix A and SPD preconditioner M, and different right-hand sides
 bs. eigPCG may be run once (or incrementally) to generate approximate least
-dominant right eigenvectors of AM^{-1}. These approximate eigenvectors are then
+dominant right eigenvectors of M^{-1}A. These approximate eigenvectors are then
 used to generate a deflated initial guess with the Init-PCG algorithm.
 Incremental eigPCG should be used when the solve of the first system ends before
 accurate eigenvector approximations can be obtained by eigPCG, which then limits
