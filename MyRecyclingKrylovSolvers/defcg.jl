@@ -4,14 +4,14 @@ defcg(A, b, x, W)
 Performs Deflated-CG (Saad et al., 2000).
 
 Used to solve A x = b with an SPD matrix A when a set of linearly independent
-vectors w1, w2, ... is known and such that, ideally, Span{w1, w2, ...} is
-"approximately" invariant under the action of A. Then, the sequence of iterates
-of Def-CG is equivalent to a post-processed sequence of a regular CG solve of a
-deflated version of the linear system, with guaranteed decrease of the condition
+vectors w1, w2, ... is known such that Span{w1, w2, ...} is "approximately"
+invariant under the action of A. The sequence of iterates of Def-CG is
+equivalent to a post-processed sequence of the regular CG solve of a deflated
+version of the linear system, with guaranteed decrease of the condition
 number. Remark: if Span{w1, w2, ...} is exactly invariant under the action of A,
-one should use Init-CG instead of Def-CG as both algorithms should have equally
-positive impacts on convergence, but Def-CG entails an additional computational
-cost at every solver iteration.
+one should use Init-CG instead of Def-CG because both algorithms would then have
+equally positive impacts on convergence, but Def-CG requires an additional
+computational cost at every solver iteration.
 
 Saad, Y.; Yeung, M.; Erhel, J. & Guyomarc'h, F.
 Deflated Version of the Conjugate Gradient Algorithm,
@@ -31,6 +31,8 @@ const n = 1_000;
 const T = Float64;
 A = sparse(SymTridiagonal(2 .+ .5 * rand(T, n), -1 .+ .05 * rand(T, n-1)));
 A = A * A;
+#
+# Example: Fixed SPD A with multiple right-hand sides bs
 function mrhs_defcg(A::SparseMatrixCSC{T}, nvec::Int, nsmp::Int)
   _, W = eigs(A; nev=nvec, which=:SM);
   println("\\n* Def-CG results *");
@@ -101,9 +103,12 @@ Performs RR-LO-TR-Def-CG (Venkovic et al., 2020), here referred to as eigDef-CG.
 
 Works as a combination of eigCG and Def-CG. The linear solve is deflated as in
 Def-CG, and approximate least dominant eigenvectors of A are computed throughout
-the solve in a similar way as in eigCG. This can be used as an alternative to
-the incremental eigCG algorithm, or for sequences of systems As xs = bs with
-correlated SPD matrices ..., As-1, As, As+1. An example is shown for each case.
+the solve in a similar way as in eigCG. This algorithm is an alternative to
+the incremental eigCG algorithm when solving for a sequence of systems A xs = bs
+with a constant SPD matrix A and different right-hand sides bs. This algorithm
+should be the method of choice when solving a sequence of linear systems of the
+form As xs = bs with correlated SPD matrices A1, A2, ... Examples are shown
+below for each type of problem.
 
 Venkovic, N.; Mycek, P; Giraud, L.; Le Maître, O.
 Recycling Krylov subspace strategiesfor sequences of sampled stochastic
@@ -126,6 +131,7 @@ A = sparse(SymTridiagonal(2 .+ .5 * rand(T, n), -1 .+ .05 * rand(T, n-1)));
 A = A * A;
 nsmp, ndefcg, nvec, spdim = 10, 3, 20, 50;
 #
+# Example 1: Fixed SPD A with multiple right-hand sides bs
 function mrhs_eigdefcg(A::SparseMatrixCSC{T}, nvec::Int, nsmp::Int, spdim::Int, ndefcg::Int)
   _, U = eigs(A; nev=nvec, which=:SM);
   W = Array{T}(undef, (n, nvec));
@@ -150,8 +156,10 @@ function mrhs_eigdefcg(A::SparseMatrixCSC{T}, nvec::Int, nsmp::Int, spdim::Int, 
 end
 mrhs_eigdefcg(A, nvec, nsmp, spdim, ndefcg);
 #
+# Example 2: Multiple SPD matrices As with a constant right-hand side b
 function mops_eigdefcg(A::SparseMatrixCSC{T}, nvec::Int, nsmp::Int, spdim::Int)
   b = rand(T, n);
+eigDef-CG: 155, Def-CG: 141, CG: 183
   W = Array{T}(undef, (n, nvec));
   println("\\n* eigDef-CG results for multiple operators *");
   for ismp in 1:nsmp
@@ -286,15 +294,16 @@ defpcg(A, b, x, M, W)
 
 Performs Deflated-PCG (Saad et al., 2000).
 
-Used to solve A x = b with an SPD matrix A when a set of linearly independent
-vectors w1, w2, ... is known and such that, ideally, Span{w1, w2, ...} is
-"approximately" invariant under the action of A. Then, the sequence of iterates
-of Def-CG is equivalent to a post-processed sequence of a regular CG solve of a
-deflated version of the linear system, with guaranteed decrease of the condition
-number. Remark: if Span{w1, w2, ...} is exactly invariant under the action of A,
-one should use Init-CG instead of Def-CG as both algorithms should have equally
-positive impacts on convergence, but Def-CG entails an additional computational
-cost at every solver iteration.
+Used to solve A x = b with an SPD matrix A and an SPD preconditioner M, when a
+set of linearly independent vectors w1, w2, ... is known such that
+Span{w1, w2, ...} is "approximately" invariant under the action of M^{-1}A.
+The sequence of iterates of Def-PCG is equivalent to a post-processed sequence
+of the regular CG solve of a deflated and split-preconditioned version of the
+linear system, with guaranteed decrease of the condition number.
+Remark: if Span{w1, w2, ...} is exactly invariant under the action of M^{-1}A,
+one should use Init-PCG instead of Def-PCG because both algorithms would then
+have equally positive impacts on convergence, but Def-PCG requires an additional
+computational cost at every solver iteration.
 
 Saad, Y.; Yeung, M.; Erhel, J. & Guyomarc'h, F.
 Deflated Version of the Conjugate Gradient Algorithm,
@@ -319,6 +328,8 @@ A = sprand(T, n, n, .0001);
 A += A' + 2 * I;
 A = A * A;
 M = BJPreconditioner(nblock, A);
+#
+# Example: Fixed SPD A with multiple right-hand sides bs
 function mrhs_defpcg(A::SparseMatrixCSC{T}, M, nvec::Int, nsmp::Int)
   _, W = eigs(A; nev=nvec, which=:SM);
   println("\\n* Def-CG results *");
@@ -391,11 +402,14 @@ eigdefpcg(A, b, x, M, W, spdim)
 
 Performs RR-LO-TR-Def-CG (Venkovic et al., 2020), here referred to as eigDef-CG.
 
-Works as a combination of eigCG and Def-CG. The linear solve is deflated as in
-Def-CG, and approximate least dominant eigenvectors of A are computed throughout
-the solve in a similar way as in eigCG. This can be used as an alternative to
-the incremental eigCG algorithm, or for sequences of systems As xs = bs with
-correlated SPD matrices ..., As-1, As, As+1. An example is shown for each case.
+Works as a combination of eigPCG and Def-PCG. The linear solve is deflated as in
+Def-PCG, and approximate least dominant right eigenvectors of M^{-1}A are
+computed throughout the solve in a similar way as in eigPCG. This algorithm is
+an alternative to the incremental eigPCG algorithm when solving for a sequence
+of systems A xs = bs with constant SPD A and M, and different right-hand sides
+bs. This algorithm should be the method of choice when solving a sequence of
+linear systems of the form As xs = bs with correlated SPD matrices A1, A2, ...
+Examples are shown below for each type of problem.
 
 Venkovic, N.; Mycek, P; Giraud, L.; Le Maître, O.
 Recycling Krylov subspace strategiesfor sequences of sampled stochastic
@@ -423,6 +437,7 @@ A = A * A;
 M = BJPreconditioner(nblock, A);
 nsmp, ndefcg, nvec, spdim = 10, 3, 5, 25;
 #
+# Example 1: Fixed SPD A with multiple right-hand sides bs
 function mrhs_eigdefpcg(A::SparseMatrixCSC{T}, M, nvec::Int, nsmp::Int, spdim::Int, ndefcg::Int)
   _, U = eigs(A; nev=nvec, which=:SM);
   W = Array{T}(undef, (n, nvec));
@@ -447,6 +462,7 @@ function mrhs_eigdefpcg(A::SparseMatrixCSC{T}, M, nvec::Int, nsmp::Int, spdim::I
 end
 mrhs_eigdefpcg(A, M, nvec, nsmp, spdim, ndefcg);
 #
+# Example 2: Multiple SPD matrices As with a constant right-hand side b
 function mops_eigdefpcg(A::SparseMatrixCSC{T}, M, nvec::Int, nsmp::Int, spdim::Int)
   b = rand(T, n);
   W = Array{T}(undef, (n, nvec));

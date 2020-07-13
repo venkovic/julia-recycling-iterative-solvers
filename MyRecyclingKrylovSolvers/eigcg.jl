@@ -33,6 +33,7 @@ A = sparse(SymTridiagonal(2 .+ .5 * rand(T, n), -1 .+ .05 * rand(T, n-1)));
 A = A * A;
 nsmp, neigcg, nvec, spdim = 10, 3, 20, 50;
 #
+# Example 1: eigCG for SPD A with multiple right-hand sides bs
 function mrhs_eigcg(A::SparseMatrixCSC{T}, nvec::Int, spdim::Int, nsmp::Int)
   W = Array{T}(undef, (n, nvec));
   println("\\n* eigCG results *");
@@ -52,6 +53,7 @@ end
 seed!(4321);
 mrhs_eigcg(A, nvec, spdim, nsmp);
 #
+# Example 2: Incremental eigCG for SPD A with multiple right-hand sides bs
 function mrhs_incr_eigcg(A::SparseMatrixCSC{T}, nvec::Int, spdim::Int, nsmp::Int, neigcg::Int)
   U = Array{T}(undef, (n, neigcg * nvec));
   H = Array{T}(undef, (neigcg * nvec, neigcg * nvec));
@@ -186,6 +188,126 @@ function eigcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, nvec::Int, spd
   return x, it, res_norm[1:it], V[:, 1:nvec]
 end
 
+"""
+eigpcg(A, b, x, M, nvec, spdim)
+
+Performs eigPCG (Stathopoulos & Orginos, 2010).
+
+Used at the begining of a solving procedure of linear systems A xs = bs with
+constant SPD matrix A and SPD preconditioner M, and different right-hand sides
+bs. eigPCG may be run once (or incrementally) to generate approximate least
+dominant right eigenvectors of AM^{-1}. These approximate eigenvectors are then
+used to generate a deflated initial guess with the Init-PCG algorithm.
+Incremental eigPCG should be used when the solve of the first system ends before
+accurate eigenvector approximations can be obtained by eigPCG, which then limits
+the potential speed-up obtained for the subsequent Init-PCG solves. See Examples
+for typical use and implementation of the Incremental eigPCG algorithm
+(Stathopoulos & Orginos, 2010).
+
+Stathopoulos, A. & Orginos, K.
+Computing and deflating eigenvalues while solving multiple right-hand side
+linear systems with an application to quantum chromodynamics,
+SIAM Journal on Scientific Computing, SIAM, 2010, 32, 439-462.
+
+# Examples
+```jldoctest
+julia>
+using LinearAlgebra: I;
+using SparseArrays: SparseMatrixCSC, sprand;
+push!(LOAD_PATH, "./MyRecyclingKrylovSolvers");
+using MyRecyclingKrylovSolvers: eigpcg, initpcg, pcg;
+push!(LOAD_PATH, "./MyPreconditioners");
+using MyPreconditioners: BJPreconditioner;
+using Random: seed!
+seed!(1234);
+const n = 5_000;
+const T = Float64;
+const nblock = 5;
+A = sprand(T, n, n, .0001);
+A += A' + 2 * I;
+A = A * A;
+M = BJPreconditioner(nblock, A);
+nsmp, neigpcg, nvec, spdim = 10, 3, 20, 50;
+#
+# Example 1: eigPCG for SPD A with multiple right-hand sides bs
+function mrhs_eigpcg(A::SparseMatrixCSC{T}, M, nvec::Int, spdim::Int, nsmp::Int)
+  W = Array{T}(undef, (n, nvec));
+  println("\\n* eigPCG results *");
+  for ismp in 1:nsmp
+    b = rand(T, n);
+    _, itpcg, _ = pcg(A, b, zeros(T, n), M);
+    if ismp == 1
+      _, iteigpcg, _, W = eigpcg(A, b, zeros(T, n), M, nvec, spdim);
+      println("eigPCG: ", iteigpcg, ", PCG: ", itpcg);
+    else
+      _, itinitpcg, _ = initpcg(A, b, zeros(T, n), M, W);
+      println("Init-PCG: ", itinitpcg, ", PCG: ", itpcg);
+    end
+  end
+end
+#
+seed!(4321);
+mrhs_eigpcg(A, M, nvec, spdim, nsmp);
+#
+# Example 2: Incremental eigCG for SPD A with multiple right-hand sides bs
+function mrhs_incr_eigpcg(A::SparseMatrixCSC{T}, M, nvec::Int, spdim::Int, nsmp::Int, neigpcg::Int)
+  U = Array{T}(undef, (n, neigpcg * nvec));
+  H = Array{T}(undef, (neigpcg * nvec, neigpcg * nvec));
+  println("\\n* Incremental eigPCG results *");
+  for ismp in 1:nsmp
+    b = rand(T, n);
+    _, itpcg, _ = pcg(A, b, zeros(T, n), M);
+    if ismp <= neigpcg
+      sl1 = 1 : (ismp - 1) * nvec;
+      sl2 = (ismp - 1) * nvec + 1 : ismp * nvec;
+      if ismp == 1
+        x = zeros(T, n);
+      else
+        x = U[:, sl1] * (H[sl1, sl1] \\ (U[:, sl1]' * b));
+      end
+      _, iteigpcg, _, U[:, sl2] = eigpcg(A, b, x, M, nvec, spdim);
+      WtA = U[:, sl2]' * A;
+      H[sl2, sl2] = WtA * U[:, sl2];
+      if ismp > 1
+        H[sl2, sl1] = WtA * U[:, sl1];
+        H[sl1, sl2] = H[sl2, sl1]';
+      end
+      println("eigPCG: ", iteigpcg, ", PCG: ", itpcg);
+    else
+      _, itinitpcg, _ = initpcg(A, b, zeros(T, n), M, U);
+      println("Init-PCG: ", itinitpcg, ", PCG: ", itpcg);
+    end
+  end
+end
+#
+seed!(4321);
+mrhs_incr_eigpcg(A, M, nvec, spdim, nsmp, neigpcg);
+
+* eigPCG results *
+eigPCG: 257, PCG: 257
+Init-PCG: 113, PCG: 259
+Init-PCG: 126, PCG: 258
+Init-PCG: 128, PCG: 264
+Init-PCG: 127, PCG: 260
+Init-PCG: 124, PCG: 259
+Init-PCG: 125, PCG: 263
+Init-PCG: 127, PCG: 260
+Init-PCG: 125, PCG: 259
+Init-PCG: 126, PCG: 257
+
+* Incremental eigCG results *
+eigPCG: 257, PCG: 257
+eigPCG: 113, PCG: 259
+eigPCG: 96, PCG: 258
+Init-PCG: 98, PCG: 264
+Init-PCG: 87, PCG: 260
+Init-PCG: 95, PCG: 259
+Init-PCG: 100, PCG: 263
+Init-PCG: 96, PCG: 260
+Init-PCG: 92, PCG: 259
+Init-PCG: 100, PCG: 257
+```
+"""
 function eigpcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M, nvec::Int, spdim::Int)
   r, Ap, p, res_norm, z = similar(x), similar(x), similar(x), similar(x), similar(x)
   #
