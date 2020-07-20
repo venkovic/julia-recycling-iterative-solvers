@@ -38,15 +38,15 @@ This example works properly. However, this approach can be pushed to its limit b
 ####Example 2: Multiple correlated sparse SPD matrices (one constant right-hand side)
 
 ```bash
-$ julia Example02_mops.jl
-$ python Example02_mops.py
+\$ julia Example02_mops.jl
+\$ python Example02_mops.py
 ```
 
-This example solves the linear systems $$A_sx_s=b$$ defined by `nsmp`=`10` samples $$A_s$$ of a random walk. The `n`-by-`n` matrix $$A_1$$ is the square of a random SPD tridiagonal matrix. We set `n`=`1_000_000` and use eigPCG (Stathopoulos and Orginos, 2010) with block Jacobi (bJ) preconditioners using different numbers (10, 20, 30) of diagonal blocks. The `nvec` LD eigenvector approximations of $$A_1$$ extracted from the eigPCG solve of $$A_1x_1=b$$ are stored by columns in a matrix $$W$$. The range of $$W$$ is then used as a deflation subspace for the iterative eigDef-PCG solve of $$A_2x_2=b$$ during which eigenvector approximations of $$A_2$$ are extracted in a similar as in Stathopoulos and Orginos, (2010). These approximate eigenvectors are used to update $$W$$ before the next eigDef-PCG solve. The eigDef-PCG algorithm is referred to as RR-LO-TR-eigDef-PCG in Venkovic et al. (2020). The black curves in the figure below are the convergence histories of the first systems in the sequence. The convergence histories are made gradually more colorful throughout the sampled sequence. Note that the incremental eigPCG procedure enables a near 75% decrease of the number of required solver iterations when using a bJ preconditioner with 30 diagonal blocks (i.e., bJ30). The relative acceleration obtained is less significant when using less blocks.
+This example solves the linear systems $$A_sx_s=b$$ defined by `nsmp`=`10` samples $$A_s$$ of a random walk. The `n`-by-`n` matrix $$A_1$$ is the square of a random SPD tridiagonal matrix. We set `n`=`1_000_000` and use eigPCG (Stathopoulos and Orginos, 2010) with block Jacobi (bJ) preconditioners using different numbers (10, 20, 30) of diagonal blocks. The `nvec` LD eigenvector approximations of $$A_1$$ extracted from the eigPCG solve of $A_1x_1=b$ are stored by columns in a matrix $W$. The range of $W$ is then used as a deflation subspace for the iterative eigDef-PCG solve of $A_2x_2=b$ during which eigenvector approximations of $A_2$ are extracted in a similar as in Stathopoulos and Orginos, (2010). These approximate eigenvectors are used to update $W$ before the next eigDef-PCG solve. The eigDef-PCG algorithm is referred to as RR-LO-TR-eigDef-PCG in Venkovic et al. (2020). The black curves in the figure below are the convergence histories of the first systems in the sequence. The convergence histories are made gradually more colorful throughout the sampled sequence. Note that the incremental eigPCG procedure enables a near 75% decrease of the number of required solver iterations when using a bJ preconditioner with 30 diagonal blocks (i.e., bJ30). The relative acceleration obtained is less significant when using less blocks.
 
 ![](./Example2_mops.png)
 
-This example works properly. However, this approach can be pushed to its limit by (i) scaling the matrix increment of the random walk used to compute the matrices $$A_s$$, (ii) decreasing the threshold of convergence on the backward error, (iii) increasing `nvec` or `spdim`, or (iv) increasing the dimension `n` of the problem. When doing so, the iterated residual $$r_j$$ tends to lose it orthogonality with respect to the deflation subspace, in which case eigDef-PCG tends to not converge, and even becomes unstable. This problem, which was described in Saad et al. (1999), can be alleviated by setting $$r_j:=r_j-W(W^TW)^{-1}W^Tr_j$$ at the end of each solver iteration. This modification, which entails a computational cost O(`nvec` * `n`) at each iteration, does help, but does not always solve the problem.
+This example works properly. However, this approach can be pushed to its limit by (i) scaling the matrix increment of the random walk used to compute the matrices $A_s$, (ii) decreasing the threshold of convergence on the backward error, (iii) increasing `nvec` or `spdim`, or (iv) increasing the dimension `n` of the problem. When doing so, the iterated residual $r_j$ tends to lose it orthogonality with respect to the deflation subspace, in which case eigDef-PCG tends to not converge, and even becomes unstable. This problem, which was described in Saad et al. (1999), can be alleviated by setting $r_j:=r_j-W(W^TW)^{-1}W^Tr_j$ at the end of each solver iteration. This modification, which entails a computational cost O(`nvec` * `n`) at each iteration, does help, but does not always solve the problem.
 
 
 
@@ -92,7 +92,7 @@ __initcg.jl__:
 
 - `initcg` (`A`::SparseMatrixCSC{`T`}, `b`::Vector{`T`}, `x`::Vector{`T`}, `W`::Array{`T`,`2`}) 
 
-  Computes iterates of Init-CG (Erhel & Guyomarc'h, 2000). Used to solve $$Ax = b$$ with an SPD matrix $$A$$ when a set of linearly independent vectors $$w_1$$, $$w_2$$, ... is known and such that Span{$$w_1$$, $$w_2$$, ...} is "approximately" invariant under the action of $$A$$. Then an initial guess may be generated which is deflated of the solution projected onto the invariant subspace. Initializing a regular CG solve with such a deflated initial guess can result in improvements of the convergence behavior.
+  Computes iterates of Init-CG (Erhel & Guyomarc'h, 2000). Used to solve $Ax = b$ with an SPD matrix $A$ when a set of linearly independent vectors $w_1$, $w_2$, ... is known and such that Span{$w_1$, $w_2$, ...} is "approximately" invariant under the action of $A$. Then an initial guess may be generated which is deflated of the solution projected onto the invariant subspace. Initializing a regular CG solve with such a deflated initial guess can result in improvements of the convergence behavior.
 
   Inputs:
 
@@ -114,7 +114,7 @@ __initcg.jl__:
 
 - `initpcg` (`A`::SparseMatrixCSC{`T`}, `b`::Vector{`T`}, `x`::Vector{`T`}, `W`::Array{`T`,`2`}) 
 
-  Computes iterates of Init-PCG (Erhel & Guyomarc'h, 2000). Used to solve $$Ax = b$$ with an SPD matrix $$A$$ and an SPD preconditioner $$M$$ when a set of linearly independent vectors $$w_1$$, $$w_2$$, ... is known and such that Span{$$w_1$$, $$w_2$$, ...} is "approximately" invariant under the action of $$M^{-1}A$$. Then an initial guess may be generated which is deflated of the solution projected onto the invariant subspace. Initializing a regular PCG solve with such a deflated initial guess can result in improvements of the convergence behavior.
+  Computes iterates of Init-PCG (Erhel & Guyomarc'h, 2000). Used to solve $Ax = b$ with an SPD matrix $A$ and an SPD preconditioner $M$ when a set of linearly independent vectors $w_1$, $w_2$, ... is known and such that Span{$w_1$, $w_2$, ...} is "approximately" invariant under the action of $M^{-1}A$. Then an initial guess may be generated which is deflated of the solution projected onto the invariant subspace. Initializing a regular PCG solve with such a deflated initial guess can result in improvements of the convergence behavior.
 
   Inputs:
 
@@ -128,7 +128,7 @@ __defcg.jl__:
 
 - `defcg` (`A`::SparseMatrixCSC{`T`}, `b`::Vector{`T`}, `x`::Vector{`T`}, `W`::Array{`T`,`2`}) 
 
-  Computes iterates of Def.-CG (Saad et al., 2000). Used to solve $$Ax = b$$ with an SPD matrix $$A$$ when a set of linearly independent vectors $$w_1$$, $$w_2$$, ... is known such that Span{$$w_1$$, $$w_2$$, ...} is "approximately" invariant under the action of $$A$$. The sequence of iterates of Def-CG is equivalent to a post-processed sequence of the regular CG solve of a deflated version of the linear system, with guaranteed decrease of the condition number. Remark: if Span{$$w_1$$, $$w_2$$, ...} is exactly invariant under the action of $$A$$, one should use Init-CG instead of Def-CG because both algorithms would then have equally positive impacts on convergence, but Def-CG requires an additional computational cost at every solver iteration.
+  Computes iterates of Def.-CG (Saad et al., 2000). Used to solve $Ax = b$ with an SPD matrix $A$ when a set of linearly independent vectors $w_1$, $w_2$, ... is known such that Span{$w_1$, $w_2$, ...} is "approximately" invariant under the action of $A$. The sequence of iterates of Def-CG is equivalent to a post-processed sequence of the regular CG solve of a deflated version of the linear system, with guaranteed decrease of the condition number. Remark: if Span{$w_1$, $w_2$, ...} is exactly invariant under the action of $A$, one should use Init-CG instead of Def-CG because both algorithms would then have equally positive impacts on convergence, but Def-CG requires an additional computational cost at every solver iteration.
 
   Inputs:
 
@@ -150,7 +150,7 @@ __defcg.jl__:
 
 - `eigdefcg` (`A`::SparseMatrixCSC{`T`}, `b`::Vector{`T`}, `x`::Vector{`T`}, `W`::Array{`T`,`2`},  `spdim`::`Int`) 
 
-  Computes iterates of RR-LO-TR-Def-CG (Venkovic et al., 2020), here referred to as eigDef-CG. Works as a combination of eigCG and Def-CG. The linear solve is deflated as in Def-CG, and approximate least dominant eigenvectors of $$A$$ are computed throughout the solve in a similar way as in eigCG. This algorithm is an alternative to the incremental eigCG algorithm when solving for a sequence of systems $$A x_s = b_s$$ with a constant SPD matrix $$A$$ and different right-hand sides $$b_s$$. This algorithm should be the method of choice when solving a sequence of linear systems of the form $$A_s x_s = b_s$$ with correlated SPD matrices $$A_1$$, $$A_2$$, ... Examples are shown in the `jldoctest` for each type of problem.
+  Computes iterates of RR-LO-TR-Def-CG (Venkovic et al., 2020), here referred to as eigDef-CG. Works as a combination of eigCG and Def-CG. The linear solve is deflated as in Def-CG, and approximate least dominant eigenvectors of $A$ are computed throughout the solve in a similar way as in eigCG. This algorithm is an alternative to the incremental eigCG algorithm when solving for a sequence of systems $A x_s = b_s$ with a constant SPD matrix $A$ and different right-hand sides $b_s$. This algorithm should be the method of choice when solving a sequence of linear systems of the form $A_s x_s = b_s$ with correlated SPD matrices $A_1$, $A_2$, ... Examples are shown in the `jldoctest` for each type of problem.
 
   Inputs:
 
@@ -162,7 +162,7 @@ __defcg.jl__:
 
 - `defpcg` (`A`::SparseMatrixCSC{`T`}, `b`::Vector{`T`}, `x`::Vector{`T`}, `W`::Array{`T`,`2`})
 
-  Computes iterates of Def.-PCG (Saad et al., 2000). Used to solve $$A x = b$$ with an SPD matrix $$A$$ and an SPD preconditioner $$M$$, when a set of linearly independent vectors $$w_1$$, $$w_2$$, ... is known such that Span{$$w_1$$, $$w_2$$, ...} is "approximately" invariant under the action of $$M^{-1}A$$. The sequence of iterates of Def-PCG is equivalent to a post-processed sequence of the regular CG solve of a deflated and split-preconditioned version of the linear system, with guaranteed decrease of the condition number. Remark: if Span{$$w_1$$, $$w_2$$, ...} is exactly invariant under the action of $$M^{-1}A$$, one should use Init-PCG instead of Def-PCG because both algorithms would then have equally positive impacts on convergence, but Def-PCG requires an additional computational cost at every solver iteration.
+  Computes iterates of Def.-PCG (Saad et al., 2000). Used to solve $A x = b$ with an SPD matrix $A$ and an SPD preconditioner $M$, when a set of linearly independent vectors $w_1$, $w_2$, ... is known such that Span{$w_1$, $w_2$, ...} is "approximately" invariant under the action of $M^{-1}A$. The sequence of iterates of Def-PCG is equivalent to a post-processed sequence of the regular CG solve of a deflated and split-preconditioned version of the linear system, with guaranteed decrease of the condition number. Remark: if Span{$w_1$, $w_2$, ...} is exactly invariant under the action of $M^{-1}A$, one should use Init-PCG instead of Def-PCG because both algorithms would then have equally positive impacts on convergence, but Def-PCG requires an additional computational cost at every solver iteration.
 
   Inputs:
 
@@ -172,7 +172,7 @@ __defcg.jl__:
 
 - `eigdefpcg` (`A`::SparseMatrixCSC{`T`}, `b`::Vector{`T`}, `x`::Vector{`T`}, `M`, `W`::Array{`T`,`2`},  `spdim`::`Int`) 
 
-  Computes iterates of RR-LO-TR-Def-PCG (Venkovic et al., 2020), here referred to as eigDef-PCG. Works as a combination of eigPCG and Def-PCG. The linear solve is deflated as in Def-PCG, and approximate least dominant right eigenvectors of $$M^{-1}A$$ are computed throughout the solve in a similar way as in eigPCG. This algorithm is an alternative to the incremental eigPCG algorithm when solving for a sequence of systems $$A x_s = b_s$$ with constant SPD $$A$$ and $$M$$, and different right-hand sides $$b_s$$. This algorithm should be the method of choice when solving a sequence of linear systems of the form $$A_s x_s = b_s$$ with correlated SPD matrices $$A_1$$, $$A_2$$, ... Examples are shown in the `jldoctest` for each type of problem.
+  Computes iterates of RR-LO-TR-Def-PCG (Venkovic et al., 2020), here referred to as eigDef-PCG. Works as a combination of eigPCG and Def-PCG. The linear solve is deflated as in Def-PCG, and approximate least dominant right eigenvectors of $M^{-1}A$ are computed throughout the solve in a similar way as in eigPCG. This algorithm is an alternative to the incremental eigPCG algorithm when solving for a sequence of systems $A x_s = b_s$ with constant SPD $A$ and $M$, and different right-hand sides $b_s$. This algorithm should be the method of choice when solving a sequence of linear systems of the form $A_s x_s = b_s$ with correlated SPD matrices $A_1$, $A_2$, ... Examples are shown in the `jldoctest` for each type of problem.
 
   Returns: `x`::Vector{`T`}, `it`::`Int`, `res_norm`::Vector{`T`}, `W`::Array{`T`,`2`}.
 
@@ -184,7 +184,7 @@ __eigcg.jl__:
 
 - `eigcg` (`A`::SparseMatrixCSC{`T`}, `b`::Vector{`T`}, `x`::Vector{`T`}, `nvec`::`Int`, `spdim`::`Int`) 
 
-  Computes iterates of eigCG (Stathopoulos & Orginos, 2010). Used at the beginning of a solving procedure of linear systems $$A x_s = b_s$$ with a constant SPD matrix $$A$$, and different right-hand sides $$b_s$$. eigCG may be run once (or incrementally) to generate approximate least dominant eigenvectors of $$A$$. These approximate eigenvectors are then used to generate a deflated initial guess with the Init-CG algorithm. Incremental eigCG should be used when the solve of the first system ends before accurate eigenvector approximations can be obtained by eigCG, which then limits the potential speed-up obtained for the subsequent Init-CG solves. See Example for typical use and implementation of the Incremental eigCG algorithm (Stathopoulos & Orginos, 2010).
+  Computes iterates of eigCG (Stathopoulos & Orginos, 2010). Used at the beginning of a solving procedure of linear systems $A x_s = b_s$ with a constant SPD matrix $A$, and different right-hand sides $b_s$. eigCG may be run once (or incrementally) to generate approximate least dominant eigenvectors of $A$. These approximate eigenvectors are then used to generate a deflated initial guess with the Init-CG algorithm. Incremental eigCG should be used when the solve of the first system ends before accurate eigenvector approximations can be obtained by eigCG, which then limits the potential speed-up obtained for the subsequent Init-CG solves. See Example for typical use and implementation of the Incremental eigCG algorithm (Stathopoulos & Orginos, 2010).
 
   Inputs:
 
@@ -210,8 +210,8 @@ __eigcg.jl__:
 
 - `eigpcg` (`A`::SparseMatrixCSC{`T`}, `b`::Vector{`T`}, `x`::Vector{`T`}, `M`, `nvec`::`Int`, `spdim`::`Int`) 
 
-  Computes iterates of eigPCG (Stathopoulos & Orginos, 2010). Used at the beginning of a solving procedure of linear systems $$A x_s = b_s$$ with
-constant SPD matrix $$A$$ and SPD preconditioner $$M$$, and different right-hand sides $$b_s$$. eigPCG may be run once (or incrementally) to generate approximate least dominant right eigenvectors of $$M^{-1}A$$. These approximate eigenvectors are then used to generate a deflated initial guess with the Init-PCG algorithm. Incremental eigPCG should be used when the solve of the first system ends before accurate eigenvector approximations can be obtained by eigPCG, which then limits the potential speed-up obtained for the subsequent Init-PCG solves. See Examples for typical use and implementation of the Incremental eigPCG algorithm (Stathopoulos & Orginos, 2010).
+  Computes iterates of eigPCG (Stathopoulos & Orginos, 2010). Used at the beginning of a solving procedure of linear systems A xs = bs with
+constant SPD matrix A and SPD preconditioner M, and different right-hand sides $b_s$. eigPCG may be run once (or incrementally) to generate approximate least dominant right eigenvectors of $M^{-1}A$. These approximate eigenvectors are then used to generate a deflated initial guess with the Init-PCG algorithm. Incremental eigPCG should be used when the solve of the first system ends before accurate eigenvector approximations can be obtained by eigPCG, which then limits the potential speed-up obtained for the subsequent Init-PCG solves. See Examples for typical use and implementation of the Incremental eigPCG algorithm (Stathopoulos & Orginos, 2010).
   
 Returns:
   
