@@ -23,23 +23,23 @@ email: venkovic@gmail.com.
 ####Example 1: Multiple right-hand sides (one constant sparse SPD matrix)
 
 ```bash
-$ julia Example01_mrhs.jl
-$ python Example01_mrhs.py
+julia Example01_mrhs.jl
+python Example01_mrhs.py
 ```
 
 This example solves the linear systems $Ax_s=b_s$ defined by `nsmp`=`10` samples of identically independently distributed (i.i.d.) $b_s$. The `n`-by-`n` matrix $A$ is the square of a random SPD tridiagonal matrix. We set `n`=`1_000_000` and use eigPCG (Stathopoulos and Orginos, 2010) with block Jacobi (bJ) preconditioners using different numbers (10, 20, 30) of diagonal blocks. The `nvec` least dominant (LD) eigenvector approximations of $A$ extracted from the solve of the first system $Ax_1=b_1$, which we store by columns in a matrix $U$, are not  accurate enough. That is to say, generating an initial iterate for the second solve whose residual is orthogonal to the range of $U$, e.g., $U(U^TAU)^{-1}U^Tb_s$, does not significantly accelerate the iterative solve. Thus, eigPCG is used incrementally (Stathopoulos and Orginos, 2010) for `nincr`=`3` solves. After every such solve, `nvec` additional (column) eigenvector approximations are appended to $U$. Meanwhile, every initial iterate is set such that its residual is orthogonal to the range of the incrementally growing $U$. Once `nincr` systems have been solved by eigPCG, $U$ remains constant as it is used to generate the initial iterates of all the next systems solved by Init-PCG (Erhel & Guyomarc'h, 2000). The black curves in the figure below are the convergence histories of the first systems in the sequence. The convergence histories are made gradually more colorful throughout the sampled sequence. Note that the incremental eigPCG procedure enables a near 90% decrease of the number of required solver iterations when using a bJ preconditioner with 30 diagonal blocks (i.e., bJ30). The relative acceleration obtained is less significant when using less blocks.
 
 ![](./Example1_mrhs.png)
 
-This example works properly. However, this approach can be pushed to its limit by increasing the number of increments `nincr`. As the total number `nincr` * `nvec` of approximate eigenvectors increases, $U$ tends to lose rank, which makes the computation of an initial iterate with an orthogonal residual more difficult. To alleviate this effect, one can orthogonalize the vectors in $$U$$, at a computational cost O((`nincr` * `nvec`)^2 * `n`). See Stathopoulos and Orginos (2010) for further details.
+This example works properly. However, this approach can be pushed to its limit by increasing the number of increments `nincr`. As the total number `nincr` * `nvec` of approximate eigenvectors increases, $U$ tends to lose rank, which makes the computation of an initial iterate with an orthogonal residual more difficult. To alleviate this effect, one can orthogonalize the vectors in $U$, at a computational cost O((`nincr` * `nvec`)^2 * `n`). See Stathopoulos and Orginos (2010) for further details.
 
 
 
 ####Example 2: Multiple correlated sparse SPD matrices (one constant right-hand side)
 
 ```bash
-\$ julia Example02_mops.jl
-\$ python Example02_mops.py
+julia Example02_mops.jl
+python Example02_mops.py
 ```
 
 This example solves the linear systems $A_sx_s=b$ defined by `nsmp`=`10` samples $A_s$ of a random walk. The `n`-by-`n` matrix $A_1$ is the square of a random SPD tridiagonal matrix. We set `n`=`1_000_000` and use eigPCG (Stathopoulos and Orginos, 2010) with block Jacobi (bJ) preconditioners using different numbers (10, 20, 30) of diagonal blocks. The `nvec` LD eigenvector approximations of $A_1$ extracted from the eigPCG solve of $A_1x_1=b$ are stored by columns in a matrix $W$. The range of $W$ is then used as a deflation subspace for the iterative eigDef-PCG solve of $A_2x_2=b$ during which eigenvector approximations of $A_2$ are extracted in a similar as in Stathopoulos and Orginos, (2010). These approximate eigenvectors are used to update $W$ before the next eigDef-PCG solve. The eigDef-PCG algorithm is referred to as RR-LO-TR-eigDef-PCG in Venkovic et al. (2020). The black curves in the figure below are the convergence histories of the first systems in the sequence. The convergence histories are made gradually more colorful throughout the sampled sequence. Note that the incremental eigPCG procedure enables a near 75% decrease of the number of required solver iterations when using a bJ preconditioner with 30 diagonal blocks (i.e., bJ30). The relative acceleration obtained is less significant when using less blocks.
