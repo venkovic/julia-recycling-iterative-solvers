@@ -20,7 +20,7 @@ email: venkovic@gmail.com.
 
 #### Running examples: 
 
-#####Example 1: Multiple right-hand sides (one constant sparse SPD matrix)
+####Example 1: Multiple right-hand sides (one constant sparse SPD matrix)
 
 ```bash
 $ julia Example01_mrhs.jl
@@ -35,7 +35,7 @@ This example works properly. However, this approach can be pushed to its limit b
 
 
 
-#####Example 2: Multiple correlated sparse SPD matrices (one constant right-hand side)
+####Example 2: Multiple correlated sparse SPD matrices (one constant right-hand side)
 
 ```bash
 $ julia Example02_mops.jl
