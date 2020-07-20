@@ -400,7 +400,7 @@ end
 """
 eigdefpcg(A, b, x, M, W, spdim)
 
-Performs RR-LO-TR-Def-CG (Venkovic et al., 2020), here referred to as eigDef-CG.
+Performs RR-LO-TR-Def-PCG (Venkovic et al., 2020), here referred to as eigDef-PCG.
 
 Works as a combination of eigPCG and Def-PCG. The linear solve is deflated as in
 Def-PCG, and approximate least dominant right eigenvectors of M^{-1}A are

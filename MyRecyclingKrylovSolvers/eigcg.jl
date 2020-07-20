@@ -3,7 +3,7 @@ eigcg(A, b, x, nvec, spdim)
 
 Performs eigCG (Stathopoulos & Orginos, 2010).
 
-Used at the begining of a solving procedure of linear systems A xs = bs with a
+Used at the beginning of a solving procedure of linear systems A xs = bs with a
 constant SPD matrix A, and different right-hand sides bs. eigCG may be run once
 (or incrementally) to generate approximate least dominant eigenvectors of A.
 These approximate eigenvectors are then used to generate a deflated initial
@@ -193,7 +193,7 @@ eigpcg(A, b, x, M, nvec, spdim)
 
 Performs eigPCG (Stathopoulos & Orginos, 2010).
 
-Used at the begining of a solving procedure of linear systems A xs = bs with
+Used at the beginning of a solving procedure of linear systems A xs = bs with
 constant SPD matrix A and SPD preconditioner M, and different right-hand sides
 bs. eigPCG may be run once (or incrementally) to generate approximate least
 dominant right eigenvectors of M^{-1}A. These approximate eigenvectors are then
