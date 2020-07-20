@@ -513,6 +513,7 @@ function eigdefpcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M, W::Arra
   #
   WtA = W' * A
   WtAW = WtA * W
+  WtW = W'W
   #
   if iszero(x)
     r .= b
@@ -542,6 +543,7 @@ function eigdefpcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M, W::Arra
   #
   VtAV[1:nvec, 1:nvec] = WtAW
   V[:, 1:nvec] = W
+  just_restarted = false
   #
   ivec = nvec + 1
   V[:, ivec] = z / sqrt(rTz)
@@ -556,6 +558,7 @@ function eigdefpcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M, W::Arra
     beta = 1. / rTz
     axpy!(alpha, p, x) # x += alpha * p
     axpy!(-alpha, Ap, r) # r -= alpha * Ap
+    r -= W * (WtW \ (W' * r))
     rTr = dot(r, r)
     z = (M \ r)::Vector{T}
     rTz = dot(r, z)
@@ -588,11 +591,33 @@ function eigdefpcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M, W::Arra
         VtAV[j, j] = vals[j]
       end
       VtAV[ivec, ivec] = beta / alpha
+      just_restarted = true
     else
+      just_restarted = false
       ivec += 1
       V[:, ivec] = z / sqrt(rTz)
       VtAV[ivec - 1, ivec] = - sqrt(beta) / alpha
       VtAV[ivec, ivec] = beta / alpha
+    end
+  end
+  if !just_restarted
+    if ivec > nvec
+      ivec -= 1
+      if first_restart
+        VtAV[1:nvec, nvec+1:ivec] = WtA * V[:, nvec+1:ivec]
+      end
+      Tm = Symmetric(VtAV[1:ivec, 1:ivec]) # ivec-by-ivec
+      Y .= 0
+      Y[1:ivec, 1:nvec] = eigvecs(Tm)[:, 1:nvec] # ivec-by-nvec
+      Y[1:ivec-1, nvec+1:end] = eigvecs(Tm[1:ivec-1, 1:ivec-1])[:, 1:nvec] # (ivec-1)-by-nvec
+      nev = rank(Y[1:ivec, :]) # nvec <= nev <= 2*nvec
+      Q = svd(Y[1:ivec, :]).U[:, 1:nev] # ivec-by-nev
+      H = Q' * (Tm * Q) # nev-by-nev
+      vals, Z = eigen(H)::Eigen{T,T,Array{T,2},Array{T,1}}
+      V[:, 1:nev] = V[:, 1:ivec] * (Q * Z) # n-by-nev
+    else
+      println("Warning: Less CG iterations than the number of ",
+              "eigenvectors wanted. Only Lanczos vectors may be returned.")
     end
   end
   return x, it, res_norm[1:it], V[:, 1:nvec]

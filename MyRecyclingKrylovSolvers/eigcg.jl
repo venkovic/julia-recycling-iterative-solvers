@@ -249,7 +249,7 @@ end
 seed!(4321);
 mrhs_eigpcg(A, M, nvec, spdim, nsmp);
 #
-# Example 2: Incremental eigCG for SPD A with multiple right-hand sides bs
+# Example 2: Incremental eigPCG for SPD A with multiple right-hand sides bs
 function mrhs_incr_eigpcg(A::SparseMatrixCSC{T}, M, nvec::Int, spdim::Int, nsmp::Int, neigpcg::Int)
   U = Array{T}(undef, (n, neigpcg * nvec));
   H = Array{T}(undef, (neigpcg * nvec, neigpcg * nvec));
@@ -328,6 +328,7 @@ function eigpcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M, nvec::Int,
   #
   ivec = 1
   V[:, ivec] = z / sqrt(rTz)
+  just_restarted = false
   #
   bnorm = norm2(b)
   tol = eps * bnorm
@@ -362,6 +363,7 @@ function eigpcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M, nvec::Int,
     end
     #
     if ivec == spdim
+      VtAV = V' * (A * V)
       Tm = Symmetric(VtAV) # spdim-by-spdim
       Y[:, 1:nvec] = eigvecs(Tm)[:, 1:nvec] # spdim-by-nvec
       Y[1:spdim-1, nvec+1:end] = eigvecs(Tm[1:spdim-1, 1:spdim-1])[:, 1:nvec] # (spdim-1)-by-nvec
@@ -386,6 +388,23 @@ function eigpcg(A::SparseMatrixCSC{T}, b::Vector{T}, x::Vector{T}, M, nvec::Int,
       V[:, ivec] = z / sqrt(rTz)
       VtAV[ivec - 1, ivec] = - sqrt(beta) / alpha
       VtAV[ivec, ivec] = beta / alpha
+    end
+  end
+  if !just_restarted
+    if ivec > nvec
+      ivec -= 1
+      Tm = Symmetric(VtAV[1:ivec, 1:ivec]) # ivec-by-ivec
+      Y .= 0
+      Y[1:ivec, 1:nvec] = eigvecs(Tm)[:, 1:nvec] # ivec-by-nvec
+      Y[1:ivec-1, nvec+1:end] = eigvecs(Tm[1:ivec-1, 1:ivec-1])[:, 1:nvec] # (ivec-1)-by-nvec
+      nev = rank(Y[1:ivec, :]) # nvec <= nev <= 2*nvec
+      Q = svd(Y[1:ivec, :]).U[:, 1:nev] # ivec-by-nev
+      H = Q' * (Tm * Q) # nev-by-nev
+      vals, Z = eigen(H)::Eigen{T,T,Array{T,2},Array{T,1}}
+      V[:, 1:nev] = V[:, 1:ivec] * (Q * Z) # n-by-nev
+    else
+      println("Warning: Less CG iterations than the number of ",
+              "eigenvectors wanted. Only Lanczos vectors may be returned.")
     end
   end
   return x, it, res_norm[1:it], V[:, 1:nvec]
