@@ -219,7 +219,7 @@ Returns:
   
   
 
-####Functions of MyPreconditioners.jl:
+#### Functions of MyPreconditioners.jl:
 
 The default type `T`=`Float64` can be changed in MyPreconditioners.jl.
 
