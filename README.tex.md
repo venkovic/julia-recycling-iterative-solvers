@@ -46,7 +46,7 @@ This example solves the linear systems $A_sx_s=b$ defined by `nsmp`=`10` samples
 
 ![](./Example2_mops.png)
 
-This example works properly. However, this approach can be pushed to its limit by (i) scaling the matrix increment of the random walk used to compute the matrices $A_s$, (ii) decreasing the threshold of convergence on the backward error, (iii) increasing `nvec` or `spdim`, or (iv) increasing the dimension `n` of the problem. When doing so, the iterated residual $r_j$ tends to lose it orthogonality with respect to the deflation subspace, in which case eigDef-PCG tends to not converge, and even becomes unstable. This problem, which was described in Saad et al. (1999), can be alleviated by setting $r_j:=r_j-W(W^TW)^{-1}W^Tr_j$ at the end of each solver iteration. This modification, which entails a computational cost O(`nvec` * `n`) at each solver iteration, does help, but does not always solve the problem.
+This example works properly. However, this approach can be pushed to its limit by (i) scaling the matrix increment of the random walk used to compute the matrices $A_s$, (ii) decreasing the threshold of convergence on the backward error, (iii) increasing `nvec` or `spdim`, or (iv) increasing the dimension `n` of the problem. When doing so, the iterated residual $r_j$ tends to lose it orthogonality with respect to the deflation subspace, in which case eigDef-PCG tends to not converge, and even becomes unstable. This problem, which was described in Saad et al. (1999), can be alleviated by setting $r_j:=r_j-W(W^TW)^{-1}W^Tr_j$ at the end of each solver iteration. This modification, which entails a computational cost O(`nvec` * `n`) at each iteration, does help, but does not always solve the problem.
 
 
 
