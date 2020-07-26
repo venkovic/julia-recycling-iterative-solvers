@@ -23,8 +23,8 @@ def get_rgb(s, nu, ind):
 
 fig, ax = pl.subplots(1, len(nblocks), figsize=(12, 3.5), sharey=True)
 for ibJ, nblock in enumerate(nblocks):
-  its = np.load('mrhs-bJ%d-incr-eigpcg.its.npy' % nblock)
-  res_norms = np.load('mrhs-bJ%d-incr-eigpcg.res_norms.npy' % nblock)
+  its = np.load('data/mrhs-bJ%d-incr-eigpcg.its.npy' % nblock)
+  res_norms = np.load('data/mrhs-bJ%d-incr-eigpcg.res_norms.npy' % nblock)
   sum_it = 0
   for ismp in range(nsmp):
     col = get_rgb(ismp, nsmp, ibJ)

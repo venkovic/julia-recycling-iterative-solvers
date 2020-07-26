@@ -54,6 +54,6 @@ for (ibJ, nblock) in enumerate(nblocks)
     A += 1e-5 * SymTridiagonal(2 * rand(T, n) .- 1, .5 .- rand(T, n-1))
   end
   #
-  npzwrite("mops-bJ$nblock-eigdefpcg.res_norms.npy", res_norms[1:it_sum])
-  npzwrite("mops-bJ$nblock-eigdefpcg.its.npy", its)
+  npzwrite("data/mops-bJ$nblock-eigdefpcg.res_norms.npy", res_norms[1:it_sum])
+  npzwrite("data/mops-bJ$nblock-eigdefpcg.its.npy", its)
 end

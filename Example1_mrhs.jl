@@ -80,6 +80,6 @@ for (ibJ, nblock) in enumerate(nblocks)
     println("ibJ = $ibJ, nblock = $nblock, it = $it")
   end
   #
-  npzwrite("mrhs-bJ$nblock-incr-eigpcg.res_norms.npy", res_norms[1:it_sum])
-  npzwrite("mrhs-bJ$nblock-incr-eigpcg.its.npy", its)
+  npzwrite("data/mrhs-bJ$nblock-incr-eigpcg.res_norms.npy", res_norms[1:it_sum])
+  npzwrite("data/mrhs-bJ$nblock-incr-eigpcg.its.npy", its)
 end
