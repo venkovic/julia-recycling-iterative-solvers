@@ -150,7 +150,7 @@ __defcg.jl__:
 
 - `eigdefcg` (`A`::SparseMatrixCSC{`T`}, `b`::Vector{`T`}, `x`::Vector{`T`}, `W`::Array{`T`,`2`},  `spdim`::`Int`) 
 
-  Computes iterates of RR-LO-TR-Def-CG (Venkovic et al., 2020), here referred to as eigDef-CG. Works as a combination of eigCG and Def-CG. The linear solve is deflated as in Def-CG, and approximate least dominant eigenvectors of $A$ are computed throughout the solve in a similar way as in eigCG. This algorithm is an alternative to the incremental eigCG algorithm when solving for a sequence of systems $\mathbf{A x}_s = \mathbf{b}_s$ with a constant SPD matrix $\mathbf{A}$ and different right-hand sides $\mathbf{b}_s$. This algorithm should be the method of choice when solving a sequence of linear systems of the form $\mathbf{A}_s \mathbf{x}_s = \mathbf{b}_s$ with correlated SPD matrices $\mathbf{A}_1$, $\mathbf{A}_2$, ... Examples are shown in the `jldoctest` for each type of problem.
+  Computes iterates of RR-LO-TR-Def-CG (Venkovic et al., 2020), here referred to as eigDef-CG. Works as a combination of eigCG and Def-CG. The linear solve is deflated as in Def-CG, and approximate least dominant eigenvectors of $\mathbf{A}$ are computed throughout the solve in a similar way as in eigCG. This algorithm is an alternative to the incremental eigCG algorithm when solving for a sequence of systems $\mathbf{A x}_s = \mathbf{b}_s$ with a constant SPD matrix $\mathbf{A}$ and different right-hand sides $\mathbf{b}_s$. This algorithm should be the method of choice when solving a sequence of linear systems of the form $\mathbf{A}_s \mathbf{x}_s = \mathbf{b}_s$ with correlated SPD matrices $\mathbf{A}_1$, $\mathbf{A}_2$, ... Examples are shown in the `jldoctest` for each type of problem.
 
   Inputs:
 
