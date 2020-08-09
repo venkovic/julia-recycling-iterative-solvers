@@ -23,7 +23,7 @@ ml = smoothed_aggregation_solver(A)
 M = ml.aspreconditioner(cycle='V')
 
 x = np.load(fname + "-" + str(n) + "_x.npy")
-res = np.linalg.norm(x - M.dot(b))
+res = np.linalg.norm(x - M(b))
 tol = 1e-7
 
 if res < tol:
