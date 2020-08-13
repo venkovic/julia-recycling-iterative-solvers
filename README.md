@@ -261,7 +261,7 @@ The default type `T`=`Float64` can be changed in MyPreconditioners.jl.
 
 #### Known issues:
 
- -  The AMG preconditioner does not accelerate solver convergence as expected. Note that, prior to constructing the AMG preconditioner using PyAmg, the reference Julia CSC sparse array is properly converted into a SciPy CSR sparse array. We currently do not know why this wrapped preconditioner under-performs compared to how we know it should do.
+ -  The AMG preconditioner does not accelerate solver convergence as expected. Note that, prior to constructing the AMG preconditioner (using PyAmg), the array is properly converted from a Julia CSC sparse format to SciPy CSR. We currently do not know why the wrapping of this preconditioner under-performs.
 
    
 
